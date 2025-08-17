@@ -1,0 +1,99 @@
+
+// solution for part-2 
+
+-- Companies
+-- Represents the companies that own products and warehouses.
+CREATE TABLE companies (
+    company_id INT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact_info VARCHAR(255)
+);
+
+-- Warehouses
+-- Represents physical storage locations.
+CREATE TABLE warehouses (
+    warehouse_id INT PRIMARY KEY,
+    location VARCHAR(255) NOT NULL,
+    capacity INT,
+    company_id INT,
+    FOREIGN KEY (company_id) REFERENCES companies(company_id)
+);
+
+-- Products
+-- Represents the base products. The SKU must be unique across the platform.
+CREATE TABLE products (
+    product_id INT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    sku VARCHAR(255) UNIQUE NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    company_id INT,
+    FOREIGN KEY (company_id) REFERENCES companies(company_id)
+);
+
+-- Suppliers
+-- Represents suppliers of products.
+CREATE TABLE suppliers (
+    supplier_id INT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact_info VARCHAR(255)
+);
+
+-- Inventory
+-- A junction table to model the many-to-many relationship between
+-- products and warehouses, tracking quantity.
+CREATE TABLE inventory (
+    product_id INT,
+    warehouse_id INT,
+    quantity INT NOT NULL CHECK (quantity >= 0),
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, warehouse_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(warehouse_id)
+);
+
+-- Product_Suppliers
+-- A junction table to link products to their suppliers.
+CREATE TABLE product_suppliers (
+    product_id INT,
+    supplier_id INT,
+    PRIMARY KEY (product_id, supplier_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
+);
+
+-- Product_Bundles
+-- A self-referencing junction table to represent "bundles" of products.
+CREATE TABLE product_bundles (
+    bundle_product_id INT,
+    component_product_id INT,
+    quantity_in_bundle INT NOT NULL,
+    PRIMARY KEY (bundle_product_id, component_product_id),
+    FOREIGN KEY (bundle_product_id) REFERENCES products(product_id),
+    FOREIGN KEY (component_product_id) REFERENCES products(product_id)
+);
+
+-- Inventory_Audit_Log
+-- A separate table to track all changes in inventory levels over time.
+CREATE TABLE inventory_audit_log (
+    log_id INT PRIMARY KEY,
+    product_id INT,
+    warehouse_id INT,
+    change_type VARCHAR(50),
+    quantity_change INT,
+    new_quantity INT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id, warehouse_id) REFERENCES inventory(product_id, warehouse_id)
+);
+
+Gaps and Missing Requirements
+1. The current requirements are a great starting point, but a real-world system would need more detail. Here are some of the questions I would ask the product team:
+
+2. Order Fulfillment: How do we track sales? Do we need a separate table to manage customer orders, sales, and shipments?
+
+3. Supplier Details: What is the relationship between products and suppliers? Do we need to track supplier-specific pricing or lead times?
+
+4. Inventory Rules: What happens when an inventory level reaches zero? Is there a reorder point? Do we need to manage product returns or transfers between warehouses?
+
+5. Product Costs: The schema includes a price (selling price), but we don't have a cost. How will we calculate profit without knowing the cost of goods?
+
+6. User Roles: Who will be using this system? Do we need a users table with different access levels (e.g., admin, warehouse manager)?
